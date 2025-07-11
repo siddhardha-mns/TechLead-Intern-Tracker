@@ -340,6 +340,29 @@ elif page == "Change History":
     else:
         st.info("No history file found.")
 
+# Download Data Section
+st.sidebar.markdown("---")
+st.sidebar.subheader("Download Data")
+if not df.empty:
+    # Download all data
+    st.sidebar.download_button(
+        "📥 Download All Data",
+        df.to_csv(index=False),
+        file_name=f"{tech_lead.replace(' ', '_')}_all_interns.csv",
+        mime="text/csv"
+    )
+    
+    # Download by cohort
+    cohort_download = st.sidebar.selectbox("Download by Cohort:", ["All", "Cohort 1", "Cohort 2"])
+    if cohort_download != "All":
+        filtered_download_df = df[df["Cohort"] == cohort_download]
+        st.sidebar.download_button(
+            f"📥 Download {cohort_download}",
+            filtered_download_df.to_csv(index=False),
+            file_name=f"{tech_lead.replace(' ', '_')}_{cohort_download.replace(' ', '_')}.csv",
+            mime="text/csv"
+        )
+
 # Footer
 st.sidebar.markdown("---")
 st.sidebar.write(f"Total Interns: {len(df)}")
