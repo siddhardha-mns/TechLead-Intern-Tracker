@@ -7,7 +7,7 @@ from datetime import datetime
 DATA_FOLDER = "data"
 HISTORY_FOLDER = "history"
 TECH_LEADS = [
-    "MADAGALA NIKHIL SAI SIDDHARDHA", "Edla Divyansh Teja", "GANNARAM DHRUV",
+    "nikhil", "Edla Divyansh Teja", "GANNARAM DHRUV",
     "Satwik Rakhelkar", "Gadagoju Srikar", "Hasini Parre", "Shiva Kumar ambotu",
     "Puneeth Peela", "Ch.Bhuvana Sri", "Guni Sreepranav", "Sai Kartikeyan Koduri",
     "Sudheer Kumar"
