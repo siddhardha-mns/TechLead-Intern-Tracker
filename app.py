@@ -71,7 +71,7 @@ def load_data():
         return pd.read_csv(data_file)
     else:
         return pd.DataFrame(columns=[
-            "Name", "Cohort", "Team", "GitLab User Name", "Year", "Received Offer letter", "College",
+            "Name", "Cohort", "Team(eg :2 or 3)", "GitLab User Name", "Year", "Received Offer letter", "College",
             "GitLab Acc (README.md)", "GitLab Acc Link",
             "Innings Courses (Python & AI)", "Huggingchat/Dify", "Huggingchat Link",
             "Streamlit app and Deployment", "Streamlit Link",
