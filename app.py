@@ -22,15 +22,36 @@ os.makedirs(HISTORY_FOLDER, exist_ok=True)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.tech_lead = None
+    st.session_state.is_super_admin = False
 
 if not st.session_state.logged_in:
     st.title("Tech Lead Login")
+    
+    # Super Admin Login Section
+    st.markdown("---")
+    st.subheader("Super Admin Panel")
+    super_admin_username = st.text_input("Super Admin Username")
+    super_admin_password = st.text_input("Super Admin Password", type="password")
+    
+    if st.button("Super Admin Login"):
+        if super_admin_username == "admin" and super_admin_password == st.secrets.get("admin_password", "admin123"):
+            st.session_state.logged_in = True
+            st.session_state.tech_lead = "Super Admin"
+            st.session_state.is_super_admin = True
+            st.success("Super Admin login successful!")
+            st.rerun()
+        else:
+            st.error("Invalid super admin credentials")
+    
+    st.markdown("---")
+    st.subheader("Tech Lead Login")
     username = st.text_input("Enter your full name")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         if username in TECH_LEADS and password == st.secrets.get(username, ""):
             st.session_state.logged_in = True
             st.session_state.tech_lead = username
+            st.session_state.is_super_admin = False
             st.success("Login successful!")
             st.rerun()
         else:
@@ -38,6 +59,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 tech_lead = st.session_state.tech_lead
+is_super_admin = st.session_state.is_super_admin
 
 # File paths
 data_file = os.path.join(DATA_FOLDER, f"{tech_lead.replace(' ', '_')}.csv")
@@ -81,6 +103,114 @@ def save_history(intern_name, action, old_data="", new_data="", changed_fields=N
 
 # Navigation sidebar
 st.sidebar.title(f"Welcome, {tech_lead}")
+
+# Super Admin Panel
+if is_super_admin:
+    st.title("Super Admin Panel")
+    st.subheader("All Tech Lead Reports")
+    
+    # Load all tech lead data
+    all_reports = []
+    tech_lead_stats = {}
+    
+    for tech_lead_name in TECH_LEADS:
+        tech_lead_file = os.path.join(DATA_FOLDER, f"{tech_lead_name.replace(' ', '_')}.csv")
+        if os.path.exists(tech_lead_file):
+            tech_df = pd.read_csv(tech_lead_file)
+            if not tech_df.empty:
+                all_reports.append(tech_df)
+                tech_lead_stats[tech_lead_name] = {
+                    "total_interns": len(tech_df),
+                    "cohort_1": len(tech_df[tech_df["Cohort"] == "Cohort 1"]),
+                    "cohort_2": len(tech_df[tech_df["Cohort"] == "Cohort 2"]),
+                    "offers_received": len(tech_df[tech_df["Received Offer letter"] == "Yes"]),
+                    "apps_pushed": len(tech_df[tech_df["Pushed Apps onto GitLab"] == "Yes"]),
+                    "data_collection_started": len(tech_df[tech_df["Data Collection (started?)"] == "Yes"])
+                }
+    
+    # Progress Overview
+    st.subheader("📊 Progress Overview")
+    if tech_lead_stats:
+        col1, col2, col3 = st.columns(3)
+        
+        total_interns = sum(stats["total_interns"] for stats in tech_lead_stats.values())
+        total_offers = sum(stats["offers_received"] for stats in tech_lead_stats.values())
+        total_apps = sum(stats["apps_pushed"] for stats in tech_lead_stats.values())
+        
+        with col1:
+            st.metric("Total Interns", total_interns)
+        with col2:
+            st.metric("Offers Received", total_offers)
+        with col3:
+            st.metric("Apps Pushed to GitLab", total_apps)
+        
+        # Tech Lead Performance Table
+        st.subheader("👥 Tech Lead Performance")
+        performance_data = []
+        for tech_lead_name, stats in tech_lead_stats.items():
+            performance_data.append({
+                "Tech Lead": tech_lead_name,
+                "Total Interns": stats["total_interns"],
+                "Cohort 1": stats["cohort_1"],
+                "Cohort 2": stats["cohort_2"],
+                "Offers Received": stats["offers_received"],
+                "Apps Pushed": stats["apps_pushed"],
+                "Data Collection Started": stats["data_collection_started"]
+            })
+        
+        performance_df = pd.DataFrame(performance_data)
+        st.dataframe(performance_df, use_container_width=True)
+        
+        # Download combined report
+        if all_reports:
+            combined_df = pd.concat(all_reports, ignore_index=True)
+            st.subheader("📥 Download Reports")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.download_button(
+                    "📊 Download Combined Report",
+                    combined_df.to_csv(index=False),
+                    file_name="all_tech_leads_combined_report.csv",
+                    mime="text/csv"
+                )
+            
+            with col2:
+                # Download individual tech lead reports
+                selected_tech_lead = st.selectbox("Download Individual Report:", TECH_LEADS)
+                if selected_tech_lead in tech_lead_stats:
+                    tech_lead_file = os.path.join(DATA_FOLDER, f"{selected_tech_lead.replace(' ', '_')}.csv")
+                    if os.path.exists(tech_lead_file):
+                        individual_df = pd.read_csv(tech_lead_file)
+                        st.download_button(
+                            f"📄 Download {selected_tech_lead} Report",
+                            individual_df.to_csv(index=False),
+                            file_name=f"{selected_tech_lead.replace(' ', '_')}_report.csv",
+                            mime="text/csv"
+                        )
+    else:
+        st.info("No tech lead reports found.")
+    
+    # Cohort Analysis
+    st.subheader("📈 Cohort Analysis")
+    if all_reports:
+        combined_df = pd.concat(all_reports, ignore_index=True)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            cohort_counts = combined_df["Cohort"].value_counts()
+            st.write("**Cohort Distribution:**")
+            for cohort, count in cohort_counts.items():
+                st.write(f"{cohort}: {count} interns")
+        
+        with col2:
+            offer_counts = combined_df["Received Offer letter"].value_counts()
+            st.write("**Offer Status:**")
+            for status, count in offer_counts.items():
+                st.write(f"{status}: {count} interns")
+    
+    st.stop()
+
 page = st.sidebar.selectbox("Navigate to:", [
     "Add/Update Intern", 
     "View All Interns", 
