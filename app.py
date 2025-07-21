@@ -947,3 +947,11 @@ if not df.empty:
     cohort_counts = df["Cohort"].value_counts()
     for cohort, count in cohort_counts.items():
         st.sidebar.write(f"{cohort}: {count}")
+
+
+
+
+
+
+
+
